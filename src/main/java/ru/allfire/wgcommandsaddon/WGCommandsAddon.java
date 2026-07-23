@@ -4,15 +4,10 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.StringFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import ru.allfire.wgcommandsaddon.listeners.PlayerListener;
 
-public final class WGCommandsAddon extends JavaPlugin implements Listener {
+public final class WGCommandsAddon extends JavaPlugin {
 
     public static StringFlag ONE_COMMAND_ASCONSOLE_FLAG;
     public static StringFlag ONE_COMMAND_ASPLAYER_FLAG;
@@ -40,10 +35,6 @@ public final class WGCommandsAddon extends JavaPlugin implements Listener {
             registry.register(ONE_PERM_COMMAND_ASPLAYER_FLAG);
             
             getLogger().info("Все флаги успешно зарегистрированы!");
-            getLogger().info("  - one-command-asconsole");
-            getLogger().info("  - one-command-asplayer");
-            getLogger().info("  - one-perm-command-asconsole");
-            getLogger().info("  - one-perm-command-asplayer");
         } catch (FlagConflictException e) {
             getLogger().warning("Ошибка регистрации флагов!");
             e.printStackTrace();
@@ -52,7 +43,6 @@ public final class WGCommandsAddon extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
-        // Регистрируем слушатель
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
         
         getLogger().info("========================================");
