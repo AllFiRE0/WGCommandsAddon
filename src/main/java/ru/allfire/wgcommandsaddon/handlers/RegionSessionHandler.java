@@ -1,6 +1,7 @@
 package ru.allfire.wgcommandsaddon.handlers;
 
 import com.sk89q.worldedit.util.Location;
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
@@ -24,17 +25,19 @@ public class RegionSessionHandler extends Handler {
     public static class Factory extends Handler.Factory<RegionSessionHandler> {
         @Override
         public RegionSessionHandler create(Session session) {
-            return new RegionSessionHandler();
+            return new RegionSessionHandler(session); // Передаем session
         }
     }
 
+    // Добавляем конструктор с Session
+    public RegionSessionHandler(Session session) {
+        super(session);
+    }
+
     @Override
-    public void initialize(Session session, Player player) {
+    public void initialize(Player player) { // Убираем Session из параметров
         try {
-            RegionContainer container = WGCommandsAddon.getInstance()
-                .getWorldGuard()
-                .getPlatform()
-                .getRegionContainer();
+            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
             
             if (container != null && player != null && player.isOnline()) {
                 ApplicableRegionSet set = container.createQuery()
@@ -51,10 +54,7 @@ public class RegionSessionHandler extends Handler {
         if (player == null || !player.isOnline()) return;
 
         try {
-            RegionContainer container = WGCommandsAddon.getInstance()
-                .getWorldGuard()
-                .getPlatform()
-                .getRegionContainer();
+            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
             
             if (container == null) return;
             
