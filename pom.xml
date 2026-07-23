@@ -33,7 +33,7 @@
     </repositories>
 
     <dependencies>
-        <!-- Leaf 26.2 API (используем Paper API 1.21.5, совместимый с Java 25) -->
+        <!-- Leaf 26.2 использует Paper API 1.21.5 -->
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
