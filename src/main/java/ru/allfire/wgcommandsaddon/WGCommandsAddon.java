@@ -51,17 +51,10 @@ public final class WGCommandsAddon extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
-        
-        try {
-            com.sk89q.worldguard.session.SessionManager sessionManager = 
-                WorldGuard.getInstance().getPlatform().getSessionManager();
-            sessionManager.registerHandler(RegionSessionHandler.FACTORY, null);
-            getLogger().info("Обработчик сессий WorldGuard зарегистрирован!");
-        } catch (Exception e) {
-            getLogger().warning("Ошибка регистрации обработчика сессий!");
-            e.printStackTrace();
-        }
-        
+    
+        // Просто создаем экземпляр обработчика
+        new RegionSessionHandler();
+    
         getLogger().info("========================================");
         getLogger().info("ДополнительныеКомандыWG v" + getDescription().getVersion());
         getLogger().info("Автор: AllF1RE");
