@@ -1,6 +1,5 @@
 package ru.allfire.wgcommandsaddon.handlers;
 
-import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -9,6 +8,7 @@ import com.sk89q.worldguard.session.MoveType;
 import com.sk89q.worldguard.session.Session;
 import com.sk89q.worldguard.session.handler.Handler;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import ru.allfire.wgcommandsaddon.WGCommandsAddon;
 import ru.allfire.wgcommandsaddon.events.RegionEnterEvent;
@@ -25,17 +25,16 @@ public class RegionSessionHandler extends Handler {
     public static class Factory extends Handler.Factory<RegionSessionHandler> {
         @Override
         public RegionSessionHandler create(Session session) {
-            return new RegionSessionHandler(session); // Передаем session
+            return new RegionSessionHandler(session);
         }
     }
 
-    // Добавляем конструктор с Session
     public RegionSessionHandler(Session session) {
         super(session);
     }
 
     @Override
-    public void initialize(Player player) { // Убираем Session из параметров
+    public void initialize(Session session, Player player) {
         try {
             RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
             
@@ -50,7 +49,8 @@ public class RegionSessionHandler extends Handler {
     }
 
     @Override
-    public void onMove(Player player, Location from, Location to, MoveType moveType) {
+    public void onMove(Player player, com.sk89q.worldedit.util.Location from, 
+                       com.sk89q.worldedit.util.Location to, MoveType moveType) {
         if (player == null || !player.isOnline()) return;
 
         try {
@@ -58,8 +58,14 @@ public class RegionSessionHandler extends Handler {
             
             if (container == null) return;
             
+            // Конвертируем WorldEdit Location в Bukkit Location
+            Location bukkitLocation = new Location(
+                Bukkit.getWorld(to.getWorld().getName()),
+                to.getX(), to.getY(), to.getZ()
+            );
+            
             ApplicableRegionSet currentSet = container.createQuery()
-                .getApplicableRegions(to);
+                .getApplicableRegions(bukkitLocation);
             Set<ProtectedRegion> currentRegions = currentSet.getRegions();
 
             // Проверяем вход в новые регионы
