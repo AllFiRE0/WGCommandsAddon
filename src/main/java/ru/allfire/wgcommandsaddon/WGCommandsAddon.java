@@ -16,7 +16,6 @@ import ru.allfire.wgcommandsaddon.handlers.RegionSessionHandler;
 
 public final class WGCommandsAddon extends JavaPlugin implements Listener {
 
-    // Флаги
     public static StringFlag ONE_COMMAND_ASCONSOLE_FLAG;
     public static StringFlag ONE_COMMAND_ASPLAYER_FLAG;
     public static StringFlag ONE_PERM_COMMAND_ASCONSOLE_FLAG;
@@ -30,7 +29,6 @@ public final class WGCommandsAddon extends JavaPlugin implements Listener {
         FlagRegistry registry = WorldGuard.getInstance().getFlagRegistry();
         
         try {
-            // Регистрируем флаги
             ONE_COMMAND_ASCONSOLE_FLAG = new StringFlag("one-command-asconsole");
             registry.register(ONE_COMMAND_ASCONSOLE_FLAG);
 
@@ -44,10 +42,6 @@ public final class WGCommandsAddon extends JavaPlugin implements Listener {
             registry.register(ONE_PERM_COMMAND_ASPLAYER_FLAG);
             
             getLogger().info("Все флаги успешно зарегистрированы!");
-            getLogger().info("  - one-command-asconsole");
-            getLogger().info("  - one-command-asplayer");
-            getLogger().info("  - one-perm-command-asconsole");
-            getLogger().info("  - one-perm-command-asplayer");
         } catch (FlagConflictException e) {
             getLogger().warning("Ошибка регистрации флагов!");
             e.printStackTrace();
@@ -102,50 +96,40 @@ public final class WGCommandsAddon extends JavaPlugin implements Listener {
         String action = isEnter ? "вход" : "выход";
         String regionName = region.getId();
 
-        // 1. one-command-asconsole (консоль, без прав)
         String consoleCommand = region.getFlag(ONE_COMMAND_ASCONSOLE_FLAG);
         if (consoleCommand != null && !consoleCommand.isEmpty()) {
             executeCommand(player, consoleCommand, false);
             getLogger().info("[one-command-asconsole] " + player.getName() + " при " + action + " в " + regionName);
         }
 
-        // 2. one-command-asplayer (игрок, без прав)
         String playerCommand = region.getFlag(ONE_COMMAND_ASPLAYER_FLAG);
         if (playerCommand != null && !playerCommand.isEmpty()) {
             executeCommandAsPlayer(player, playerCommand);
             getLogger().info("[one-command-asplayer] " + player.getName() + " при " + action + " в " + regionName);
         }
 
-        // 3. one-perm-command-asconsole (консоль, с правом)
         String permConsoleCommand = region.getFlag(ONE_PERM_COMMAND_ASCONSOLE_FLAG);
         if (permConsoleCommand != null && !permConsoleCommand.isEmpty()) {
             if (player.hasPermission("wgca.onecommand")) {
                 executeCommand(player, permConsoleCommand, true);
                 getLogger().info("[one-perm-command-asconsole] " + player.getName() + " при " + action + " в " + regionName);
-            } else {
-                getLogger().info("[one-perm-command-asconsole] " + player.getName() + " не имеет права wgca.onecommand");
             }
         }
 
-        // 4. one-perm-command-asplayer (игрок, с правом)
         String permPlayerCommand = region.getFlag(ONE_PERM_COMMAND_ASPLAYER_FLAG);
         if (permPlayerCommand != null && !permPlayerCommand.isEmpty()) {
             if (player.hasPermission("wgca.onecommand")) {
                 executeCommandAsPlayer(player, permPlayerCommand);
                 getLogger().info("[one-perm-command-asplayer] " + player.getName() + " при " + action + " в " + regionName);
-            } else {
-                getLogger().info("[one-perm-command-asplayer] " + player.getName() + " не имеет права wgca.onecommand");
             }
         }
     }
 
-    // Выполнение команды от консоли
     private void executeCommand(Player player, String command, boolean checkPermission) {
         String parsedCommand = command.replace("{player}", player.getName());
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsedCommand);
     }
 
-    // Выполнение команды от игрока
     private void executeCommandAsPlayer(Player player, String command) {
         String parsedCommand = command.replace("{player}", player.getName());
         player.performCommand(parsedCommand);
