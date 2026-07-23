@@ -1,0 +1,14 @@
+name: WGCommandsAddon
+version: 1.0.0
+main: ru.allfire.wgcommandsaddon.WGCommandsAddon
+api-version: 1.13
+depend:
+  - WorldGuard
+  - WorldEdit
+author: AllF1RE
+description: Дополнительные флаги команд для WorldGuard
+
+permissions:
+  wgca.onecommand:
+    description: Разрешает выполнение команд из флагов one-perm-command-asconsole и one-perm-command-asplayer
+    default: false
