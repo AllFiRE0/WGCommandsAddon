@@ -24,9 +24,17 @@ public class PlayerListener implements Listener {
     private final WGCommandsAddon plugin;
     private final Map<Player, String> playerRegionStates = new HashMap<>();
     private final Map<Player, Long> lastCheckTime = new HashMap<>();
+    private boolean placeholderAPIEnabled = false;
 
     public PlayerListener(WGCommandsAddon plugin) {
         this.plugin = plugin;
+        // Проверяем наличие PlaceholderAPI
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            placeholderAPIEnabled = true;
+            plugin.getLogger().info("PlaceholderAPI найден! Внешние заполнители поддерживаются.");
+        } else {
+            plugin.getLogger().warning("PlaceholderAPI НЕ найден! Внешние заполнители не будут работать.");
+        }
     }
 
     @EventHandler
@@ -105,7 +113,7 @@ public class PlayerListener implements Listener {
             // 1. one-command-asconsole (консоль, без прав)
             String consoleCommand = region.getFlag(WGCommandsAddon.ONE_COMMAND_ASCONSOLE_FLAG);
             if (consoleCommand != null && !consoleCommand.isEmpty()) {
-                String parsed = consoleCommand.replace("{player}", player.getName());
+                String parsed = replacePlaceholders(player, consoleCommand, regionName);
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
                 plugin.getLogger().info("[one-command-asconsole] " + player.getName() + " вошел в " + regionName);
             }
@@ -113,7 +121,7 @@ public class PlayerListener implements Listener {
             // 2. one-command-asplayer (игрок, без прав)
             String playerCommand = region.getFlag(WGCommandsAddon.ONE_COMMAND_ASPLAYER_FLAG);
             if (playerCommand != null && !playerCommand.isEmpty()) {
-                String parsed = playerCommand.replace("{player}", player.getName());
+                String parsed = replacePlaceholders(player, playerCommand, regionName);
                 player.performCommand(parsed);
                 plugin.getLogger().info("[one-command-asplayer] " + player.getName() + " вошел в " + regionName);
             }
@@ -122,7 +130,7 @@ public class PlayerListener implements Listener {
             String permConsoleCommand = region.getFlag(WGCommandsAddon.ONE_PERM_COMMAND_ASCONSOLE_FLAG);
             if (permConsoleCommand != null && !permConsoleCommand.isEmpty()) {
                 if (player.hasPermission("wgca.onecommand")) {
-                    String parsed = permConsoleCommand.replace("{player}", player.getName());
+                    String parsed = replacePlaceholders(player, permConsoleCommand, regionName);
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
                     plugin.getLogger().info("[one-perm-command-asconsole] " + player.getName() + " вошел в " + regionName);
                 }
@@ -132,7 +140,7 @@ public class PlayerListener implements Listener {
             String permPlayerCommand = region.getFlag(WGCommandsAddon.ONE_PERM_COMMAND_ASPLAYER_FLAG);
             if (permPlayerCommand != null && !permPlayerCommand.isEmpty()) {
                 if (player.hasPermission("wgca.onecommand")) {
-                    String parsed = permPlayerCommand.replace("{player}", player.getName());
+                    String parsed = replacePlaceholders(player, permPlayerCommand, regionName);
                     player.performCommand(parsed);
                     plugin.getLogger().info("[one-perm-command-asplayer] " + player.getName() + " вошел в " + regionName);
                 }
@@ -155,7 +163,7 @@ public class PlayerListener implements Listener {
             // 1. one-command-asconsole (консоль, без прав)
             String consoleCommand = region.getFlag(WGCommandsAddon.ONE_COMMAND_ASCONSOLE_FLAG);
             if (consoleCommand != null && !consoleCommand.isEmpty()) {
-                String parsed = consoleCommand.replace("{player}", player.getName());
+                String parsed = replacePlaceholders(player, consoleCommand, regionName);
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
                 plugin.getLogger().info("[one-command-asconsole] " + player.getName() + " вышел из " + regionName);
             }
@@ -163,7 +171,7 @@ public class PlayerListener implements Listener {
             // 2. one-command-asplayer (игрок, без прав)
             String playerCommand = region.getFlag(WGCommandsAddon.ONE_COMMAND_ASPLAYER_FLAG);
             if (playerCommand != null && !playerCommand.isEmpty()) {
-                String parsed = playerCommand.replace("{player}", player.getName());
+                String parsed = replacePlaceholders(player, playerCommand, regionName);
                 player.performCommand(parsed);
                 plugin.getLogger().info("[one-command-asplayer] " + player.getName() + " вышел из " + regionName);
             }
@@ -172,7 +180,7 @@ public class PlayerListener implements Listener {
             String permConsoleCommand = region.getFlag(WGCommandsAddon.ONE_PERM_COMMAND_ASCONSOLE_FLAG);
             if (permConsoleCommand != null && !permConsoleCommand.isEmpty()) {
                 if (player.hasPermission("wgca.onecommand")) {
-                    String parsed = permConsoleCommand.replace("{player}", player.getName());
+                    String parsed = replacePlaceholders(player, permConsoleCommand, regionName);
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
                     plugin.getLogger().info("[one-perm-command-asconsole] " + player.getName() + " вышел из " + regionName);
                 }
@@ -182,7 +190,7 @@ public class PlayerListener implements Listener {
             String permPlayerCommand = region.getFlag(WGCommandsAddon.ONE_PERM_COMMAND_ASPLAYER_FLAG);
             if (permPlayerCommand != null && !permPlayerCommand.isEmpty()) {
                 if (player.hasPermission("wgca.onecommand")) {
-                    String parsed = permPlayerCommand.replace("{player}", player.getName());
+                    String parsed = replacePlaceholders(player, permPlayerCommand, regionName);
                     player.performCommand(parsed);
                     plugin.getLogger().info("[one-perm-command-asplayer] " + player.getName() + " вышел из " + regionName);
                 }
@@ -191,6 +199,32 @@ public class PlayerListener implements Listener {
         } catch (Exception e) {
             plugin.getLogger().warning("Ошибка при выполнении команд выхода: " + e.getMessage());
         }
+    }
+
+    /**
+     * Заменяет плейсхолдеры в команде
+     * Поддерживает:
+     * - {player} - имя игрока
+     * - {region} - название региона
+     * - %placeholder% - любые PlaceholderAPI заполнители
+     */
+    private String replacePlaceholders(Player player, String command, String regionName) {
+        String result = command;
+        
+        // Встроенные заполнители
+        result = result.replace("{player}", player.getName());
+        result = result.replace("{region}", regionName);
+        
+        // PlaceholderAPI заполнители (%player_name%, %worldguard_region_name%, и т.д.)
+        if (placeholderAPIEnabled) {
+            try {
+                result = me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(player, result);
+            } catch (Exception e) {
+                plugin.getLogger().warning("Ошибка при обработке PlaceholderAPI: " + e.getMessage());
+            }
+        }
+        
+        return result;
     }
 
     @EventHandler
