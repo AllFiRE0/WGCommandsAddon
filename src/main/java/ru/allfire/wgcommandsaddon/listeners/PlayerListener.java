@@ -24,12 +24,14 @@ public class PlayerListener implements Listener {
     private final Map<Player, String> playerRegionStates = new HashMap<>();
     private final Map<Player, Long> lastCheckTime = new HashMap<>();
     private final boolean placeholderAPIEnabled;
+    private final boolean disableLogs;
     
     private final Map<String, Long> cooldownCache = new ConcurrentHashMap<>();
 
-    public PlayerListener(WGCommandsAddon plugin, boolean placeholderAPIEnabled) {
+    public PlayerListener(WGCommandsAddon plugin, boolean placeholderAPIEnabled, boolean disableLogs) {
         this.plugin = plugin;
         this.placeholderAPIEnabled = placeholderAPIEnabled;
+        this.disableLogs = disableLogs;
     }
 
     @EventHandler
@@ -92,7 +94,9 @@ public class PlayerListener implements Listener {
             }
 
         } catch (Exception e) {
-            plugin.getLogger().warning("Ошибка при проверке региона: " + e.getMessage());
+            if (!disableLogs) {
+                plugin.getLogger().warning("Ошибка при проверке региона: " + e.getMessage());
+            }
         }
     }
 
@@ -163,7 +167,9 @@ public class PlayerListener implements Listener {
                     if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
                         String parsed = replacePlaceholders(player, cmd.command, regionName);
                         player.performCommand(parsed);
-                        plugin.getLogger().info("[more-cmd-player] " + player.getName() + " -> " + parsed);
+                        if (!disableLogs) {
+                            plugin.getLogger().info("[more-cmd-player] " + player.getName() + " -> " + parsed);
+                        }
                     }
                 }
             }
@@ -176,7 +182,9 @@ public class PlayerListener implements Listener {
                     if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
                         String parsed = replacePlaceholders(player, cmd.command, regionName);
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
-                        plugin.getLogger().info("[more-cmd-console] " + player.getName() + " -> " + parsed);
+                        if (!disableLogs) {
+                            plugin.getLogger().info("[more-cmd-console] " + player.getName() + " -> " + parsed);
+                        }
                     }
                 }
             }
@@ -190,7 +198,9 @@ public class PlayerListener implements Listener {
                         if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
                             String parsed = replacePlaceholders(player, cmd.command, regionName);
                             player.performCommand(parsed);
-                            plugin.getLogger().info("[more-perm-cmd-player] " + player.getName() + " -> " + parsed);
+                            if (!disableLogs) {
+                                plugin.getLogger().info("[more-perm-cmd-player] " + player.getName() + " -> " + parsed);
+                            }
                         }
                     }
                 }
@@ -205,14 +215,18 @@ public class PlayerListener implements Listener {
                         if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
                             String parsed = replacePlaceholders(player, cmd.command, regionName);
                             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
-                            plugin.getLogger().info("[more-perm-cmd-console] " + player.getName() + " -> " + parsed);
+                            if (!disableLogs) {
+                                plugin.getLogger().info("[more-perm-cmd-console] " + player.getName() + " -> " + parsed);
+                            }
                         }
                     }
                 }
             }
 
         } catch (Exception e) {
-            plugin.getLogger().warning("Ошибка при выполнении команд входа: " + e.getMessage());
+            if (!disableLogs) {
+                plugin.getLogger().warning("Ошибка при выполнении команд входа: " + e.getMessage());
+            }
         }
     }
 
@@ -233,7 +247,9 @@ public class PlayerListener implements Listener {
                     if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
                         String parsed = replacePlaceholders(player, cmd.command, regionName);
                         player.performCommand(parsed);
-                        plugin.getLogger().info("[more-cmd-player] " + player.getName() + " вышел -> " + parsed);
+                        if (!disableLogs) {
+                            plugin.getLogger().info("[more-cmd-player] " + player.getName() + " вышел -> " + parsed);
+                        }
                     }
                 }
             }
@@ -246,7 +262,9 @@ public class PlayerListener implements Listener {
                     if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
                         String parsed = replacePlaceholders(player, cmd.command, regionName);
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
-                        plugin.getLogger().info("[more-cmd-console] " + player.getName() + " вышел -> " + parsed);
+                        if (!disableLogs) {
+                            plugin.getLogger().info("[more-cmd-console] " + player.getName() + " вышел -> " + parsed);
+                        }
                     }
                 }
             }
@@ -260,7 +278,9 @@ public class PlayerListener implements Listener {
                         if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
                             String parsed = replacePlaceholders(player, cmd.command, regionName);
                             player.performCommand(parsed);
-                            plugin.getLogger().info("[more-perm-cmd-player] " + player.getName() + " вышел -> " + parsed);
+                            if (!disableLogs) {
+                                plugin.getLogger().info("[more-perm-cmd-player] " + player.getName() + " вышел -> " + parsed);
+                            }
                         }
                     }
                 }
@@ -275,14 +295,18 @@ public class PlayerListener implements Listener {
                         if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
                             String parsed = replacePlaceholders(player, cmd.command, regionName);
                             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
-                            plugin.getLogger().info("[more-perm-cmd-console] " + player.getName() + " вышел -> " + parsed);
+                            if (!disableLogs) {
+                                plugin.getLogger().info("[more-perm-cmd-console] " + player.getName() + " вышел -> " + parsed);
+                            }
                         }
                     }
                 }
             }
 
         } catch (Exception e) {
-            plugin.getLogger().warning("Ошибка при выполнении команд выхода: " + e.getMessage());
+            if (!disableLogs) {
+                plugin.getLogger().warning("Ошибка при выполнении команд выхода: " + e.getMessage());
+            }
         }
     }
 
@@ -295,7 +319,9 @@ public class PlayerListener implements Listener {
             try {
                 result = me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(player, result);
             } catch (Exception e) {
-                plugin.getLogger().warning("Ошибка PlaceholderAPI: " + e.getMessage());
+                if (!disableLogs) {
+                    plugin.getLogger().warning("Ошибка PlaceholderAPI: " + e.getMessage());
+                }
             }
         }
         
