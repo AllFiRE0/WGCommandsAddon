@@ -5,10 +5,12 @@ api-version: 1.13
 depend:
   - WorldGuard
   - WorldEdit
+softdepend:
+  - PlaceholderAPI
 author: AllF1RE
 description: Дополнительные флаги команд для WorldGuard
 
 permissions:
-  wgca.onecommand:
-    description: Разрешает выполнение команд из флагов one-perm-command-asconsole и one-perm-command-asplayer
-    default: false
+  wgca.use:
+    description: Разрешает выполнение команд из флагов more-perm-cmd-player и more-perm-cmd-console
+    default: true
