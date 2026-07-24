@@ -4,17 +4,19 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.StringFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.allfire.wgcommandsaddon.listeners.PlayerListener;
 
 public final class WGCommandsAddon extends JavaPlugin {
 
-    public static StringFlag ONE_COMMAND_ASCONSOLE_FLAG;
-    public static StringFlag ONE_COMMAND_ASPLAYER_FLAG;
-    public static StringFlag ONE_PERM_COMMAND_ASCONSOLE_FLAG;
-    public static StringFlag ONE_PERM_COMMAND_ASPLAYER_FLAG;
+    public static StringFlag MORE_CMD_PLAYER_FLAG;
+    public static StringFlag MORE_CMD_CONSOLE_FLAG;
+    public static StringFlag MORE_PERM_CMD_PLAYER_FLAG;
+    public static StringFlag MORE_PERM_CMD_CONSOLE_FLAG;
     
     private static WGCommandsAddon instance;
+    private boolean placeholderAPIEnabled = false;
 
     @Override
     public void onLoad() {
@@ -22,19 +24,23 @@ public final class WGCommandsAddon extends JavaPlugin {
         FlagRegistry registry = WorldGuard.getInstance().getFlagRegistry();
         
         try {
-            ONE_COMMAND_ASCONSOLE_FLAG = new StringFlag("one-command-asconsole");
-            registry.register(ONE_COMMAND_ASCONSOLE_FLAG);
+            MORE_CMD_PLAYER_FLAG = new StringFlag("more-cmd-player");
+            registry.register(MORE_CMD_PLAYER_FLAG);
 
-            ONE_COMMAND_ASPLAYER_FLAG = new StringFlag("one-command-asplayer");
-            registry.register(ONE_COMMAND_ASPLAYER_FLAG);
+            MORE_CMD_CONSOLE_FLAG = new StringFlag("more-cmd-console");
+            registry.register(MORE_CMD_CONSOLE_FLAG);
 
-            ONE_PERM_COMMAND_ASCONSOLE_FLAG = new StringFlag("one-perm-command-asconsole");
-            registry.register(ONE_PERM_COMMAND_ASCONSOLE_FLAG);
+            MORE_PERM_CMD_PLAYER_FLAG = new StringFlag("more-perm-cmd-player");
+            registry.register(MORE_PERM_CMD_PLAYER_FLAG);
 
-            ONE_PERM_COMMAND_ASPLAYER_FLAG = new StringFlag("one-perm-command-asplayer");
-            registry.register(ONE_PERM_COMMAND_ASPLAYER_FLAG);
+            MORE_PERM_CMD_CONSOLE_FLAG = new StringFlag("more-perm-cmd-console");
+            registry.register(MORE_PERM_CMD_CONSOLE_FLAG);
             
             getLogger().info("Все флаги успешно зарегистрированы!");
+            getLogger().info("  - more-cmd-player");
+            getLogger().info("  - more-cmd-console");
+            getLogger().info("  - more-perm-cmd-player");
+            getLogger().info("  - more-perm-cmd-console");
         } catch (FlagConflictException e) {
             getLogger().warning("Ошибка регистрации флагов!");
             e.printStackTrace();
@@ -43,16 +49,25 @@ public final class WGCommandsAddon extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+        // Проверяем наличие PlaceholderAPI
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            placeholderAPIEnabled = true;
+            getLogger().info("PlaceholderAPI найден! Внешние заполнители поддерживаются.");
+        } else {
+            getLogger().warning("PlaceholderAPI НЕ найден! Внешние заполнители не будут работать.");
+        }
+        
+        // Регистрируем слушатель
+        getServer().getPluginManager().registerEvents(new PlayerListener(this, placeholderAPIEnabled), this);
         
         getLogger().info("========================================");
         getLogger().info("ДополнительныеКомандыWG v" + getDescription().getVersion());
         getLogger().info("Автор: AllF1RE");
         getLogger().info("Флаги:");
-        getLogger().info("  - one-command-asconsole (консоль, без прав)");
-        getLogger().info("  - one-command-asplayer (игрок, без прав)");
-        getLogger().info("  - one-perm-command-asconsole (консоль, с правом wgca.onecommand)");
-        getLogger().info("  - one-perm-command-asplayer (игрок, с правом wgca.onecommand)");
+        getLogger().info("  - more-cmd-player (игрок, все)");
+        getLogger().info("  - more-cmd-console (консоль, все)");
+        getLogger().info("  - more-perm-cmd-player (игрок, только обычные игроки)");
+        getLogger().info("  - more-perm-cmd-console (консоль, только обычные игроки)");
         getLogger().info("========================================");
     }
 
@@ -63,5 +78,9 @@ public final class WGCommandsAddon extends JavaPlugin {
 
     public static WGCommandsAddon getInstance() {
         return instance;
+    }
+    
+    public boolean isPlaceholderAPIEnabled() {
+        return placeholderAPIEnabled;
     }
 }
