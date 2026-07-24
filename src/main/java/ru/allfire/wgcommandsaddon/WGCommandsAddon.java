@@ -49,7 +49,6 @@ public final class WGCommandsAddon extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // Проверяем наличие PlaceholderAPI
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             placeholderAPIEnabled = true;
             getLogger().info("PlaceholderAPI найден! Внешние заполнители поддерживаются.");
@@ -57,23 +56,24 @@ public final class WGCommandsAddon extends JavaPlugin {
             getLogger().warning("PlaceholderAPI НЕ найден! Внешние заполнители не будут работать.");
         }
         
-        // Регистрируем слушатель
         getServer().getPluginManager().registerEvents(new PlayerListener(this, placeholderAPIEnabled), this);
         
         getLogger().info("========================================");
-        getLogger().info("ДополнительныеКомандыWG v" + getDescription().getVersion());
+        getLogger().info("WGCommandsAddon v" + getDescription().getVersion());
         getLogger().info("Автор: AllF1RE");
         getLogger().info("Флаги:");
         getLogger().info("  - more-cmd-player (игрок, все)");
         getLogger().info("  - more-cmd-console (консоль, все)");
         getLogger().info("  - more-perm-cmd-player (игрок, только обычные игроки)");
         getLogger().info("  - more-perm-cmd-console (консоль, только обычные игроки)");
+        getLogger().info("Формат: 'задержка_сек команда||задержка_сек команда'");
+        getLogger().info("Пример: '10 give {player} bone 1||30 give {player} diamond 1'");
         getLogger().info("========================================");
     }
 
     @Override
     public void onDisable() {
-        getLogger().info("ДополнительныеКомандыWG выключен.");
+        getLogger().info("WGCommandsAddon выключен.");
     }
 
     public static WGCommandsAddon getInstance() {
