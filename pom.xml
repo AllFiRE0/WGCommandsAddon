@@ -30,6 +30,11 @@
             <id>sk89q-repo</id>
             <url>https://maven.enginehub.org/repo/</url>
         </repository>
+        <!-- Репозиторий PlaceholderAPI -->
+        <repository>
+            <id>placeholderapi</id>
+            <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -52,6 +57,14 @@
             <groupId>com.sk89q.worldedit</groupId>
             <artifactId>worldedit-bukkit</artifactId>
             <version>7.3.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- PlaceholderAPI (опционально) -->
+        <dependency>
+            <groupId>me.clip</groupId>
+            <artifactId>placeholderapi</artifactId>
+            <version>2.11.5</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
