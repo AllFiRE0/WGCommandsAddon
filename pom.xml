@@ -30,7 +30,6 @@
             <id>sk89q-repo</id>
             <url>https://maven.enginehub.org/repo/</url>
         </repository>
-        <!-- Репозиторий PlaceholderAPI -->
         <repository>
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
@@ -38,7 +37,6 @@
     </repositories>
 
     <dependencies>
-        <!-- Leaf 26.2 использует Paper API 1.21.5 -->
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
@@ -60,7 +58,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- PlaceholderAPI (опционально) -->
         <dependency>
             <groupId>me.clip</groupId>
             <artifactId>placeholderapi</artifactId>
