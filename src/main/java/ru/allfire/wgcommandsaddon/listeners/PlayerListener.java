@@ -25,7 +25,6 @@ public class PlayerListener implements Listener {
     private final Map<Player, Long> lastCheckTime = new HashMap<>();
     private final boolean placeholderAPIEnabled;
     
-    // Кэш кулдаунов: ключ = "игрок:регион:команда", значение = время последнего выполнения
     private final Map<String, Long> cooldownCache = new ConcurrentHashMap<>();
 
     public PlayerListener(WGCommandsAddon plugin, boolean placeholderAPIEnabled) {
@@ -97,15 +96,6 @@ public class PlayerListener implements Listener {
         }
     }
 
-    private boolean isAdmin(Player player) {
-        return player.hasPermission("*") || player.hasPermission("bukkit.command.*");
-    }
-
-    /**
-     * Парсит строку флага в список команд с задержками
-     * Формат: "задержка_сек команда||задержка_сек команда"
-     * Пример: "10 give {player} bone 1||30 give {player} diamond 1"
-     */
     private List<CommandWithCooldown> parseCommands(String flagValue) {
         List<CommandWithCooldown> result = new ArrayList<>();
         if (flagValue == null || flagValue.isEmpty()) return result;
@@ -118,8 +108,6 @@ public class PlayerListener implements Listener {
             int cooldown = 0;
             String command = part;
             
-            // Проверяем, есть ли задержка в начале
-            // Формат: "10 команда" или просто "команда"
             String[] spaceSplit = part.split(" ", 2);
             if (spaceSplit.length == 2) {
                 try {
@@ -128,9 +116,7 @@ public class PlayerListener implements Listener {
                         cooldown = parsedCooldown;
                         command = spaceSplit[1];
                     }
-                } catch (NumberFormatException ignored) {
-                    // Если не число, то вся строка - команда
-                }
+                } catch (NumberFormatException ignored) {}
             }
             
             result.add(new CommandWithCooldown(command, cooldown));
@@ -139,11 +125,8 @@ public class PlayerListener implements Listener {
         return result;
     }
 
-    /**
-     * Проверяет кулдаун для конкретной команды
-     */
     private boolean checkCooldown(Player player, String regionName, String command, int cooldownSeconds) {
-        if (cooldownSeconds <= 0) return true; // Нет кулдауна
+        if (cooldownSeconds <= 0) return true;
         
         String key = player.getUniqueId() + ":" + regionName + ":" + command;
         Long lastExecution = cooldownCache.get(key);
@@ -160,7 +143,7 @@ public class PlayerListener implements Listener {
             return true;
         }
         
-        return false; // Кулдаун еще активен
+        return false;
     }
 
     private void handleRegionEntry(Player player, String regionName) {
@@ -172,9 +155,7 @@ public class PlayerListener implements Listener {
             ProtectedRegion region = regionManager.getRegion(regionName);
             if (region == null) return;
 
-            boolean isAdmin = isAdmin(player);
-
-            // 1. more-cmd-player (игрок, все)
+            // 1. more-cmd-player (игрок, БЕЗ проверки прав)
             String playerCmdFlag = region.getFlag(WGCommandsAddon.MORE_CMD_PLAYER_FLAG);
             if (playerCmdFlag != null && !playerCmdFlag.isEmpty()) {
                 List<CommandWithCooldown> commands = parseCommands(playerCmdFlag);
@@ -182,12 +163,12 @@ public class PlayerListener implements Listener {
                     if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
                         String parsed = replacePlaceholders(player, cmd.command, regionName);
                         player.performCommand(parsed);
-                        plugin.getLogger().info("[more-cmd-player] " + player.getName() + " -> " + parsed + " (кулдаун " + cmd.cooldownSeconds + "с)");
+                        plugin.getLogger().info("[more-cmd-player] " + player.getName() + " -> " + parsed);
                     }
                 }
             }
 
-            // 2. more-cmd-console (консоль, все)
+            // 2. more-cmd-console (консоль, БЕЗ проверки прав)
             String consoleCmdFlag = region.getFlag(WGCommandsAddon.MORE_CMD_CONSOLE_FLAG);
             if (consoleCmdFlag != null && !consoleCmdFlag.isEmpty()) {
                 List<CommandWithCooldown> commands = parseCommands(consoleCmdFlag);
@@ -195,33 +176,37 @@ public class PlayerListener implements Listener {
                     if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
                         String parsed = replacePlaceholders(player, cmd.command, regionName);
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
-                        plugin.getLogger().info("[more-cmd-console] " + player.getName() + " -> " + parsed + " (кулдаун " + cmd.cooldownSeconds + "с)");
+                        plugin.getLogger().info("[more-cmd-console] " + player.getName() + " -> " + parsed);
                     }
                 }
             }
 
-            // 3. more-perm-cmd-player (игрок, только обычные)
+            // 3. more-perm-cmd-player (игрок, проверяет право wgca.use)
             String permPlayerCmdFlag = region.getFlag(WGCommandsAddon.MORE_PERM_CMD_PLAYER_FLAG);
-            if (permPlayerCmdFlag != null && !permPlayerCmdFlag.isEmpty() && !isAdmin) {
-                List<CommandWithCooldown> commands = parseCommands(permPlayerCmdFlag);
-                for (CommandWithCooldown cmd : commands) {
-                    if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
-                        String parsed = replacePlaceholders(player, cmd.command, regionName);
-                        player.performCommand(parsed);
-                        plugin.getLogger().info("[more-perm-cmd-player] " + player.getName() + " -> " + parsed + " (кулдаун " + cmd.cooldownSeconds + "с)");
+            if (permPlayerCmdFlag != null && !permPlayerCmdFlag.isEmpty()) {
+                if (player.hasPermission("wgca.use")) {
+                    List<CommandWithCooldown> commands = parseCommands(permPlayerCmdFlag);
+                    for (CommandWithCooldown cmd : commands) {
+                        if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
+                            String parsed = replacePlaceholders(player, cmd.command, regionName);
+                            player.performCommand(parsed);
+                            plugin.getLogger().info("[more-perm-cmd-player] " + player.getName() + " -> " + parsed);
+                        }
                     }
                 }
             }
 
-            // 4. more-perm-cmd-console (консоль, только обычные)
+            // 4. more-perm-cmd-console (консоль, проверяет право wgca.use)
             String permConsoleCmdFlag = region.getFlag(WGCommandsAddon.MORE_PERM_CMD_CONSOLE_FLAG);
-            if (permConsoleCmdFlag != null && !permConsoleCmdFlag.isEmpty() && !isAdmin) {
-                List<CommandWithCooldown> commands = parseCommands(permConsoleCmdFlag);
-                for (CommandWithCooldown cmd : commands) {
-                    if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
-                        String parsed = replacePlaceholders(player, cmd.command, regionName);
-                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
-                        plugin.getLogger().info("[more-perm-cmd-console] " + player.getName() + " -> " + parsed + " (кулдаун " + cmd.cooldownSeconds + "с)");
+            if (permConsoleCmdFlag != null && !permConsoleCmdFlag.isEmpty()) {
+                if (player.hasPermission("wgca.use")) {
+                    List<CommandWithCooldown> commands = parseCommands(permConsoleCmdFlag);
+                    for (CommandWithCooldown cmd : commands) {
+                        if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
+                            String parsed = replacePlaceholders(player, cmd.command, regionName);
+                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
+                            plugin.getLogger().info("[more-perm-cmd-console] " + player.getName() + " -> " + parsed);
+                        }
                     }
                 }
             }
@@ -240,9 +225,7 @@ public class PlayerListener implements Listener {
             ProtectedRegion region = regionManager.getRegion(regionName);
             if (region == null) return;
 
-            boolean isAdmin = isAdmin(player);
-
-            // 1. more-cmd-player (игрок, все)
+            // 1. more-cmd-player (игрок, БЕЗ проверки прав)
             String playerCmdFlag = region.getFlag(WGCommandsAddon.MORE_CMD_PLAYER_FLAG);
             if (playerCmdFlag != null && !playerCmdFlag.isEmpty()) {
                 List<CommandWithCooldown> commands = parseCommands(playerCmdFlag);
@@ -255,7 +238,7 @@ public class PlayerListener implements Listener {
                 }
             }
 
-            // 2. more-cmd-console (консоль, все)
+            // 2. more-cmd-console (консоль, БЕЗ проверки прав)
             String consoleCmdFlag = region.getFlag(WGCommandsAddon.MORE_CMD_CONSOLE_FLAG);
             if (consoleCmdFlag != null && !consoleCmdFlag.isEmpty()) {
                 List<CommandWithCooldown> commands = parseCommands(consoleCmdFlag);
@@ -268,28 +251,32 @@ public class PlayerListener implements Listener {
                 }
             }
 
-            // 3. more-perm-cmd-player (игрок, только обычные)
+            // 3. more-perm-cmd-player (игрок, проверяет право wgca.use)
             String permPlayerCmdFlag = region.getFlag(WGCommandsAddon.MORE_PERM_CMD_PLAYER_FLAG);
-            if (permPlayerCmdFlag != null && !permPlayerCmdFlag.isEmpty() && !isAdmin) {
-                List<CommandWithCooldown> commands = parseCommands(permPlayerCmdFlag);
-                for (CommandWithCooldown cmd : commands) {
-                    if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
-                        String parsed = replacePlaceholders(player, cmd.command, regionName);
-                        player.performCommand(parsed);
-                        plugin.getLogger().info("[more-perm-cmd-player] " + player.getName() + " вышел -> " + parsed);
+            if (permPlayerCmdFlag != null && !permPlayerCmdFlag.isEmpty()) {
+                if (player.hasPermission("wgca.use")) {
+                    List<CommandWithCooldown> commands = parseCommands(permPlayerCmdFlag);
+                    for (CommandWithCooldown cmd : commands) {
+                        if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
+                            String parsed = replacePlaceholders(player, cmd.command, regionName);
+                            player.performCommand(parsed);
+                            plugin.getLogger().info("[more-perm-cmd-player] " + player.getName() + " вышел -> " + parsed);
+                        }
                     }
                 }
             }
 
-            // 4. more-perm-cmd-console (консоль, только обычные)
+            // 4. more-perm-cmd-console (консоль, проверяет право wgca.use)
             String permConsoleCmdFlag = region.getFlag(WGCommandsAddon.MORE_PERM_CMD_CONSOLE_FLAG);
-            if (permConsoleCmdFlag != null && !permConsoleCmdFlag.isEmpty() && !isAdmin) {
-                List<CommandWithCooldown> commands = parseCommands(permConsoleCmdFlag);
-                for (CommandWithCooldown cmd : commands) {
-                    if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
-                        String parsed = replacePlaceholders(player, cmd.command, regionName);
-                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
-                        plugin.getLogger().info("[more-perm-cmd-console] " + player.getName() + " вышел -> " + parsed);
+            if (permConsoleCmdFlag != null && !permConsoleCmdFlag.isEmpty()) {
+                if (player.hasPermission("wgca.use")) {
+                    List<CommandWithCooldown> commands = parseCommands(permConsoleCmdFlag);
+                    for (CommandWithCooldown cmd : commands) {
+                        if (checkCooldown(player, regionName, cmd.command, cmd.cooldownSeconds)) {
+                            String parsed = replacePlaceholders(player, cmd.command, regionName);
+                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed);
+                            plugin.getLogger().info("[more-perm-cmd-console] " + player.getName() + " вышел -> " + parsed);
+                        }
                     }
                 }
             }
@@ -320,13 +307,9 @@ public class PlayerListener implements Listener {
         Player player = event.getPlayer();
         playerRegionStates.remove(player);
         lastCheckTime.remove(player);
-        // Очищаем кулдауны игрока
         cooldownCache.keySet().removeIf(key -> key.startsWith(player.getUniqueId() + ":"));
     }
 
-    /**
-     * Вспомогательный класс для хранения команды с кулдауном
-     */
     private static class CommandWithCooldown {
         final String command;
         final int cooldownSeconds;
